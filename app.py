@@ -19,6 +19,24 @@ def save_data(data):
     with open(DATA_FILE, 'w') as f:
         json.dump(data, f)
 
+def send_alert_email(verification):
+    """Send email alert for high-risk verifications"""
+    if verification['risk_score'] > 70:
+        # In production, this would use SendGrid or similar
+        # For now, we'll just log it
+        alert = f"""
+        🚨 HIGH RISK ALERT 🚨
+        
+        Business Number: {verification['business_number']}
+        Risk Score: {verification['risk_score']}/100
+        Status: {verification['status']}
+        Phantom Risk: {'YES' if verification['phantom_risk'] else 'NO'}
+        Time: {verification['timestamp']}
+        
+        Action Required: Manual review recommended
+        """
+        print(alert)  # In production, this would send actual email
+
 @app.route('/')
 def home():
     data = load_data()
@@ -160,6 +178,7 @@ def home():
                 background: #fee2e2;
                 color: #991b1b;
             }}
+            .text-blue {{ color: #3b82f6; }}
             .text-green {{ color: #10b981; }}
             .text-red {{ color: #ef4444; }}
             .text-yellow {{ color: #f59e0b; }}
@@ -316,6 +335,9 @@ def verify():
         'message': 'Verification complete'
     }
     
+    # Send alert for high-risk businesses
+    send_alert_email(verification)
+    
     # Update stats
     data['stats']['total'] += 1
     if is_verified:
@@ -351,21 +373,3 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     print(f"Starting Indigenous Verify API v2.0 on port {port}")
     app.run(host='0.0.0.0', port=port)
-def send_alert_email(verification):
-    """Send email alert for high-risk verifications"""
-    if verification['risk_score'] > 70:
-        # In production, this would use SendGrid or similar
-        # For now, we'll just log it
-        alert = f"""
-        🚨 HIGH RISK ALERT 🚨
-        
-        Business Number: {verification['business_number']}
-        Risk Score: {verification['risk_score']}/100
-        Status: {verification['status']}
-        Phantom Risk: {'YES' if verification['phantom_risk'] else 'NO'}
-        Time: {verification['timestamp']}
-        
-        Action Required: Manual review recommended
-        """
-        print(f"EMAIL ALERT: {alert}")
-        # In real implementation, send actual email here
